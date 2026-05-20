@@ -1,4 +1,15 @@
 
+terraform {
+  required_version = ">= 1.0"
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0"
+    }
+  }
+}
+
 # AWS Provider Configuration
 # Credentials from environment variables or AWS credentials file
 # Set AWS_PROFILE=default or AWS_PROFILE=production
