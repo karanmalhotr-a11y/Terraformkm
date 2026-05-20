@@ -43,3 +43,4 @@ variable "ami_id" {
   type        = string
   default     = "ami-0236922087fa98b6e" # Amazon Linux 2 (update for your region)
 }
+ 
