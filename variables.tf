@@ -3,7 +3,11 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
-
+variable "aws_profile" {
+  description = "AWS CLI profile to use from ~/.aws/credentials file"
+  type        = string
+  default     = "default"
+}
 variable "project_name" {
   description = "Project name for resource naming and tagging"
   type        = string
