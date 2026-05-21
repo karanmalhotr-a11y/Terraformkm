@@ -12,7 +12,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 sh '''
-                    export PATH=$PATH:/usr/bin
+                    export PATH=$PATH:/usr/local/bin
                     terraform init
                 '''
             }
@@ -21,7 +21,7 @@ pipeline {
         stage('Terraform Validate') {
             steps {
                 sh '''
-                    export PATH=$PATH:/usr/bin
+                    export PATH=$PATH:/usr/local/bin
                     terraform validate
                 '''
             }
@@ -30,7 +30,7 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 sh '''
-                    export PATH=$PATH:/usr/bin
+                    export PATH=$PATH:/usr/local/bin
                     terraform plan
                 '''
             }
@@ -39,7 +39,7 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 sh '''
-                    export PATH=$PATH:/usr/bin
+                    export PATH=$PATH:/usr/local/bin
                     terraform apply -auto-approve
                 '''
             }
@@ -47,7 +47,7 @@ pipeline {
         stage('Terraform Destroy') {
             steps {
                 sh '''
-                export PATH=$PATH:/usr/bin
+                export PATH=$PATH:/usr/local/bin
                 terraform destroy -auto-approve
                 '''
         }
