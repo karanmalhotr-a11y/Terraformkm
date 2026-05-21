@@ -46,7 +46,6 @@ pipeline {
         }
         stage('Terraform Destroy') {
             steps {
-            input message: 'Destroy infrastructure?' // manual approval
                 sh '''
                 export PATH=$PATH:/usr/bin
                 terraform destroy -auto-approve
