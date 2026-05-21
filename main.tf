@@ -16,7 +16,6 @@ terraform {
 # Or use AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables
 provider "aws" {
   region  = var.aws_region
-  profile = var.aws_profile
 
   default_tags {
     tags = {
