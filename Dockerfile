@@ -1,36 +1,44 @@
 # ─────────────────────────────────────────────────────────────
-# Dockerfile — Terraform runner for Terraformkm
-# Packages: Terraform >= 1.0, AWS CLI v2
+# Dockerfile — Terraform + AWS CLI runner for Terraformkm
+# Base: Debian slim (glibc) — avoids musl/Alpine compatibility
+#       issues with the AWS CLI v2 binary
 # ─────────────────────────────────────────────────────────────
-FROM hashicorp/terraform:1.8.5
+FROM debian:bookworm-slim
 
-# Install utilities + AWS CLI v2 via official binary (avoids pip/pyexpat conflicts on Alpine)
-RUN apk add --no-cache \
+ARG TERRAFORM_VERSION=1.8.5
+
+# Install system dependencies + AWS CLI v2
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     unzip \
-    bash \
     git \
     jq \
-    gcompat \
-    libstdc++ \
-    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    \
+    # Install Terraform binary
+    && curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
+       -o /tmp/terraform.zip \
+    && unzip -q /tmp/terraform.zip -d /usr/local/bin \
+    && rm /tmp/terraform.zip \
+    \
+    # Install AWS CLI v2 binary
+    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+       -o /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp \
     && /tmp/aws/install \
     && rm -rf /tmp/awscliv2.zip /tmp/aws \
+    \
+    # Smoke test
     && terraform --version \
     && aws --version
 
-# Set working directory
 WORKDIR /workspace
 
-# Copy Terraform configuration files
 COPY main.tf .
 COPY variables.tf .
 COPY terraform.tfvars .
 
-# Terraform state / credentials are injected at runtime via env vars;
-# never bake secrets into the image.
-
-# Default entrypoint — override in Jenkins with specific terraform commands
+# Credentials injected at runtime via env vars — never baked in
 ENTRYPOINT ["terraform"]
 CMD ["--help"]
