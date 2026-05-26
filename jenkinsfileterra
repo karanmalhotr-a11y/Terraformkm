@@ -22,6 +22,7 @@ pipeline {
                     string(credentialsId: 'DOCKER_PASS', variable: 'DOCKER_PASS')
                 ]) {
                     sh '''
+                        export PATH=$PATH:/usr/local/bin
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker build -t "$DOCKER_USER/kmjenkins:terrakm" .
                         docker push "$DOCKER_USER/kmjenkins:terrakm"
