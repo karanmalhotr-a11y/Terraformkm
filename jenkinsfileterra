@@ -119,23 +119,23 @@ pipeline {
             }
         }
 
-        // stage('Terraform Destroy') {
-        //     steps {
-        //         input message: 'Are you sure you want to DESTROY all infrastructure?'
-        //         withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
-        //             sh """
-        //                export PATH=$PATH:/usr/local/bin
-        //                 docker run --rm \
-        //                     -v "\${WORKSPACE}:/workspace" \
-        //                     -w /workspace \
-        //                     -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
-        //                     -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
-        //                     -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
-        //                     "\${DOCKER_USER}/kmjenkins:terrakm" destroy -auto-approve
-        //             """
-        //         }
-        //     }
-        // }
+         stage('Terraform Destroy') {
+             steps {
+                 input message: 'Are you sure you want to DESTROY all infrastructure?'
+                 withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
+                     sh """
+                        export PATH=$PATH:/usr/local/bin
+                         docker run --rm \
+                             -v "\${WORKSPACE}:/workspace" \
+                             -w /workspace \
+                             -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+                             -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+                             -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+                             "\${DOCKER_USER}/kmjenkins:terrakm" destroy -auto-approve
+                     """
+                 }
+             }
+         }
     }
 
     post {
@@ -144,11 +144,11 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed — check logs above.'
-            sh 'docker image prune -f || true'
+            sh 'export PATH=$PATH:/usr/local/bin && docker image prune -f || true'
         }
         always {
             withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
-                sh 'docker rmi "$DOCKER_USER/kmjenkins:terrakm" || true'
+                sh 'export PATH=$PATH:/usr/local/bin && docker rmi "$DOCKER_USER/kmjenkins:terrakm" || true'
             }
         }
     }
