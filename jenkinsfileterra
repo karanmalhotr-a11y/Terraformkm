@@ -38,6 +38,7 @@ pipeline {
                     string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
                 ]) {
                     sh """
+                        export PATH=$PATH:/usr/local/bin
                         docker run --rm \
                             -v "\${WORKSPACE}:/workspace" \
                             -w /workspace \
@@ -56,6 +57,7 @@ pipeline {
                     string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
                 ]) {
                     sh """
+                        export PATH=$PATH:/usr/local/bin
                         docker run --rm \
                             -v "\${WORKSPACE}:/workspace" \
                             -w /workspace \
@@ -74,6 +76,7 @@ pipeline {
                     string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
                 ]) {
                     sh """
+                        export PATH=$PATH:/usr/local/bin
                         docker run --rm \
                             -v "\${WORKSPACE}:/workspace" \
                             -w /workspace \
@@ -103,6 +106,7 @@ pipeline {
                     string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
                 ]) {
                     sh """
+                        export PATH=$PATH:/usr/local/bin
                         docker run --rm \
                             -v "\${WORKSPACE}:/workspace" \
                             -w /workspace \
@@ -120,6 +124,7 @@ pipeline {
         //         input message: 'Are you sure you want to DESTROY all infrastructure?'
         //         withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
         //             sh """
+        //                export PATH=$PATH:/usr/local/bin
         //                 docker run --rm \
         //                     -v "\${WORKSPACE}:/workspace" \
         //                     -w /workspace \
