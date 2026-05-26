@@ -45,7 +45,7 @@ pipeline {
                         -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
                         -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
                         -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        ${FULL_IMAGE} init
+                        $DOCKER_USER/kmjenkins:terrakm init
                 """
             }
         }
@@ -60,7 +60,7 @@ pipeline {
                         -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
                         -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
                         -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        ${FULL_IMAGE} validate
+                        $DOCKER_USER/kmjenkins:terrakm validate
                 """
             }
         }
@@ -78,7 +78,7 @@ pipeline {
                         -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
                         -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
                         -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        ${FULL_IMAGE} plan -out=/workspace/tfplan
+                        $DOCKER_USER/kmjenkins:terrakm plan -out=/workspace/tfplan
                 """
             }
         }
@@ -108,7 +108,7 @@ pipeline {
                         -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
                         -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
                         -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        ${FULL_IMAGE} apply -auto-approve /workspace/tfplan
+                        $DOCKER_USER/kmjenkins:terrakm apply -auto-approve /workspace/tfplan
                 """
             }
         }
@@ -125,7 +125,7 @@ pipeline {
         //                 -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
         //                 -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
         //                 -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-        //                 ${FULL_IMAGE} destroy -auto-approve
+        //                 $DOCKER_USER/kmjenkins:terrakm destroy -auto-approve
         //         """
         //     }
         // }
@@ -133,7 +133,7 @@ pipeline {
 
     post {
         success {
-            echo "Pipeline succeeded — image pushed as ${FULL_IMAGE}"
+            echo "Pipeline succeeded — image pushed as $DOCKER_USER/kmjenkins:terrakm"
         }
         failure {
             echo 'Pipeline failed — check logs above.'
@@ -142,7 +142,7 @@ pipeline {
         always {
             // Remove local image after pipeline — it is safely in the registry
             sh """
-                docker rmi ${FULL_IMAGE} ${FULL_IMAGE_LATEST} || true
+                docker rmi $DOCKER_USER/kmjenkins:terrakm || true
             """
         }
     }
