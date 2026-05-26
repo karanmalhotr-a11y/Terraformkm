@@ -15,75 +15,76 @@ pipeline {
             }
         }
 
-      stage('Docker Build & Push') {
+        stage('Docker Build & Push') {
             steps {
                 withCredentials([
                     string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER'),
                     string(credentialsId: 'DOCKER_PASS', variable: 'DOCKER_PASS')
                 ]) {
                     sh '''
-                        export PATH=$PATH:/usr/local/bin
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                         docker build -t "$DOCKER_USER/kmjenkins:terrakm" .
                         docker push "$DOCKER_USER/kmjenkins:terrakm"
+                        docker logout
                     '''
                 }
             }
         }
 
-        // ── Stage 4: Terraform Init ────────────────────────────────
-        // Runs INSIDE the Docker container built above.
-        // docker run mounts the workspace so Terraform can read .tf files
-        // and write the .terraform directory + tfplan back to the Jenkins
-        // workspace (shared via the -v volume mount).
         stage('Terraform Init') {
             steps {
-                sh """
-                    docker run --rm \
-                        -v ${WORKSPACE}:/workspace \
-                        -w /workspace \
-                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                        -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        $DOCKER_USER/kmjenkins:terrakm init
-                """
+                withCredentials([
+                    string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
+                ]) {
+                    sh """
+                        docker run --rm \
+                            -v "\${WORKSPACE}:/workspace" \
+                            -w /workspace \
+                            -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+                            -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+                            -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+                            "\${DOCKER_USER}/kmjenkins:terrakm" init -input=false
+                    """
+                }
             }
         }
 
-        // ── Stage 5: Terraform Validate ───────────────────────────
         stage('Terraform Validate') {
             steps {
-                sh """
-                    docker run --rm \
-                        -v ${WORKSPACE}:/workspace \
-                        -w /workspace \
-                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                        -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        $DOCKER_USER/kmjenkins:terrakm validate
-                """
+                withCredentials([
+                    string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
+                ]) {
+                    sh """
+                        docker run --rm \
+                            -v "\${WORKSPACE}:/workspace" \
+                            -w /workspace \
+                            -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+                            -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+                            -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+                            "\${DOCKER_USER}/kmjenkins:terrakm" validate
+                    """
+                }
             }
         }
 
-        // ── Stage 6: Terraform Plan ────────────────────────────────
-        // Saves the plan to /workspace/tfplan inside the container,
-        // which maps to ${WORKSPACE}/tfplan on the Jenkins agent —
-        // so the Apply stage can pick it up in a fresh container run.
         stage('Terraform Plan') {
             steps {
-                sh """
-                    docker run --rm \
-                        -v ${WORKSPACE}:/workspace \
-                        -w /workspace \
-                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                        -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        $DOCKER_USER/kmjenkins:terrakm plan -out=/workspace/tfplan
-                """
+                withCredentials([
+                    string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
+                ]) {
+                    sh """
+                        docker run --rm \
+                            -v "\${WORKSPACE}:/workspace" \
+                            -w /workspace \
+                            -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+                            -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+                            -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+                            "\${DOCKER_USER}/kmjenkins:terrakm" plan -input=false -out=/workspace/tfplan
+                    """
+                }
             }
         }
 
-        // ── Stage 7: Approval gate (main branch only) ──────────────
         stage('Approval') {
             when {
                 branch 'main'
@@ -95,54 +96,54 @@ pipeline {
             }
         }
 
-        // ── Stage 8: Terraform Apply ───────────────────────────────
-        // Picks up the tfplan file written by the Plan stage.
-        // Runs inside the same Docker image — guaranteed same Terraform
-        // version and provider versions as Plan.
         stage('Terraform Apply') {
             steps {
-                sh """
-                    docker run --rm \
-                        -v ${WORKSPACE}:/workspace \
-                        -w /workspace \
-                        -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-                        -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-                        -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-                        $DOCKER_USER/kmjenkins:terrakm apply -auto-approve /workspace/tfplan
-                """
+                withCredentials([
+                    string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')
+                ]) {
+                    sh """
+                        docker run --rm \
+                            -v "\${WORKSPACE}:/workspace" \
+                            -w /workspace \
+                            -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+                            -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+                            -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+                            "\${DOCKER_USER}/kmjenkins:terrakm" apply -auto-approve /workspace/tfplan
+                    """
+                }
             }
         }
 
-        // ── Stage 9: Terraform Destroy (commented out by default) ──
-        // Uncomment only when you intentionally want to destroy infra.
         // stage('Terraform Destroy') {
         //     steps {
         //         input message: 'Are you sure you want to DESTROY all infrastructure?'
-        //         sh """
-        //             docker run --rm \
-        //                 -v ${WORKSPACE}:/workspace \
-        //                 -w /workspace \
-        //                 -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
-        //                 -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
-        //                 -e AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION} \
-        //                 $DOCKER_USER/kmjenkins:terrakm destroy -auto-approve
-        //         """
+        //         withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
+        //             sh """
+        //                 docker run --rm \
+        //                     -v "\${WORKSPACE}:/workspace" \
+        //                     -w /workspace \
+        //                     -e AWS_ACCESS_KEY_ID="\${AWS_ACCESS_KEY_ID}" \
+        //                     -e AWS_SECRET_ACCESS_KEY="\${AWS_SECRET_ACCESS_KEY}" \
+        //                     -e AWS_DEFAULT_REGION="\${AWS_DEFAULT_REGION}" \
+        //                     "\${DOCKER_USER}/kmjenkins:terrakm" destroy -auto-approve
+        //             """
+        //         }
         //     }
         // }
     }
 
     post {
         success {
-            echo "Pipeline succeeded — image pushed as $DOCKER_USER/kmjenkins:terrakm"
+            echo 'Pipeline succeeded.'
         }
         failure {
             echo 'Pipeline failed — check logs above.'
             sh 'docker image prune -f || true'
         }
         always {
-            // Remove local image after pipeline — it is safely in the registry
-            sh """
-                docker rmi $DOCKER_USER/kmjenkins:terrakm || true
-            """
+            withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
+                sh 'docker rmi "$DOCKER_USER/kmjenkins:terrakm" || true'
+            }
         }
     }
+}
