@@ -4,16 +4,19 @@
 # ─────────────────────────────────────────────────────────────
 FROM hashicorp/terraform:1.8.5
 
-# Install AWS CLI v2 and basic utilities
+# Install utilities + AWS CLI v2 via official binary (avoids pip/pyexpat conflicts on Alpine)
 RUN apk add --no-cache \
     curl \
     unzip \
     bash \
-    python3 \
-    py3-pip \
     git \
     jq \
-    && pip3 install --break-system-packages awscli \
+    gcompat \
+    libstdc++ \
+    && curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/awscliv2.zip /tmp/aws \
     && terraform --version \
     && aws --version
 
