@@ -147,4 +147,4 @@ pipeline {
             sh 'export PATH=$PATH:/usr/local/bin && docker image prune -f || true'
         }
     }
-
+}
