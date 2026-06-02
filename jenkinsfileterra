@@ -146,10 +146,5 @@ pipeline {
             echo 'Pipeline failed — check logs above.'
             sh 'export PATH=$PATH:/usr/local/bin && docker image prune -f || true'
         }
-        always {
-            withCredentials([string(credentialsId: 'DOCKER_USER', variable: 'DOCKER_USER')]) {
-                sh 'export PATH=$PATH:/usr/local/bin && docker rmi "$DOCKER_USER/kmjenkins:terrakm" || true'
-            }
-        }
     }
-}
+
